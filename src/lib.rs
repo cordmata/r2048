@@ -45,8 +45,38 @@ impl Board {
                     })
                     .collect(),
             )),
-            Direction::UP => None,
-            Direction::DOWN => None,
+            Direction::UP => {
+                let mut flipped = vec![];
+                for col in 0..Board::SIZE {
+                    for ele in (col..self.0.len()).step_by(4) {
+                        flipped.push(self.0[ele]);
+                    }
+                }
+                let left = Board(flipped).shift(Direction::LEFT).unwrap();
+                let mut flopped = vec![];
+                for col in 0..Board::SIZE {
+                    for ele in (col..left.0.len()).step_by(4) {
+                        flopped.push(left.0[ele]);
+                    }
+                }
+                Some(Board(flopped))
+            }
+            Direction::DOWN => {
+                let mut flipped = vec![];
+                for col in 0..Board::SIZE {
+                    for ele in (col..self.0.len()).step_by(4) {
+                        flipped.push(self.0[ele]);
+                    }
+                }
+                let left = Board(flipped).shift(Direction::RIGHT).unwrap();
+                let mut flopped = vec![];
+                for col in 0..Board::SIZE {
+                    for ele in (col..left.0.len()).step_by(4) {
+                        flopped.push(left.0[ele]);
+                    }
+                }
+                Some(Board(flopped))
+            }
         }
     }
 }
@@ -143,6 +173,22 @@ mod tests {
             0, 8, 2, 8,
             0, 0, 0, 4,
             0, 0, 2, 8,
+        ]);
+
+        let next = b.shift(Direction::UP).unwrap();
+        assert_eq!(next.0, &[
+            16, 8, 8, 2,
+            4,  2, 2, 0,
+            0,  4, 4, 0,
+            0,  0, 0, 0,
+        ]);
+
+        let next = b.shift(Direction::DOWN).unwrap();
+        assert_eq!(next.0, &[
+            0,  0, 0, 0,
+            0,  8, 8, 0,
+            16, 2, 2, 0,
+            4,  4, 4, 2,
         ]);
     }
 
