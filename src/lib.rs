@@ -1,5 +1,5 @@
 use console::Style;
-use core::fmt;
+use core::{fmt, num};
 
 #[derive(Debug)]
 pub struct Board(Vec<usize>);
@@ -45,40 +45,27 @@ impl Board {
                     })
                     .collect(),
             )),
-            Direction::UP => {
-                let mut flipped = vec![];
-                for col in 0..Board::SIZE {
-                    for ele in (col..self.0.len()).step_by(4) {
-                        flipped.push(self.0[ele]);
-                    }
-                }
-                let left = Board(flipped).shift(Direction::LEFT).unwrap();
-                let mut flopped = vec![];
-                for col in 0..Board::SIZE {
-                    for ele in (col..left.0.len()).step_by(4) {
-                        flopped.push(left.0[ele]);
-                    }
-                }
-                Some(Board(flopped))
-            }
-            Direction::DOWN => {
-                let mut flipped = vec![];
-                for col in 0..Board::SIZE {
-                    for ele in (col..self.0.len()).step_by(4) {
-                        flipped.push(self.0[ele]);
-                    }
-                }
-                let left = Board(flipped).shift(Direction::RIGHT).unwrap();
-                let mut flopped = vec![];
-                for col in 0..Board::SIZE {
-                    for ele in (col..left.0.len()).step_by(4) {
-                        flopped.push(left.0[ele]);
-                    }
-                }
-                Some(Board(flopped))
+            Direction::UP | Direction::DOWN => {
+                let score_shift = match d {
+                    Direction::UP => Direction::LEFT,
+                    _ => Direction::RIGHT,
+                };
+                let left = Board(transpose(&self.0)).shift(score_shift).unwrap();
+                Some(Board(transpose(&left.0)))
             }
         }
     }
+}
+
+fn transpose(orig: &[usize]) -> Vec<usize> {
+    let mut flipped = vec![];
+    let num_rows = Board::SIZE;
+    for col in 0..num_rows {
+        for ele in (col..orig.len()).step_by(num_rows) {
+            flipped.push(orig[ele]);
+        }
+    }
+    flipped
 }
 
 fn combine_and_score(row: &[usize]) -> (Vec<usize>, usize) {
