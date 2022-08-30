@@ -2,7 +2,8 @@ use r2048::*;
 use std::{process::exit, thread::sleep, time::Duration};
 
 fn main() {
-    let game: Board = Board::new();
+    let mut game: Board = Board::new();
+    println!("Starting State:\n\n{}", game);
     for d in [
         Direction::LEFT,
         Direction::RIGHT,
@@ -10,11 +11,11 @@ fn main() {
         Direction::DOWN,
     ] {
         match game.shift(d) {
-            Some(next) => {
-                println!("\r{}", next)
+            Ok(()) => {
+                println!("\r{}", game)
             }
-            None => {
-                println!("Game Over!");
+            Err(e) => {
+                println!("Game Over! - : {}", e);
                 sleep(Duration::from_secs(3));
                 exit(0);
             }

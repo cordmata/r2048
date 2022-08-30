@@ -1,8 +1,13 @@
 use console::Style;
-use core::{fmt, num};
+use core::fmt;
+use rand::seq::{IteratorRandom, SliceRandom};
+use std::{convert::identity, error::Error};
 
 #[derive(Debug)]
-pub struct Board(Vec<usize>);
+pub struct Board {
+    values: Vec<usize>,
+    score: usize,
+}
 pub enum Direction {
     UP,
     DOWN,
@@ -10,49 +15,88 @@ pub enum Direction {
     RIGHT,
 }
 
+type BoardMutationResult = Result<(), Box<dyn Error>>;
+
 impl Board {
     const SIZE: usize = 4;
 
-    pub fn new() -> Board {
-        Board(vec![0; Board::SIZE * Board::SIZE])
+    pub fn new() -> Self {
+        let mut board = Board {
+            values: vec![0; Board::SIZE * Board::SIZE],
+            score: 0,
+        };
+        for _ in 0..2 {
+            board
+                .add_random_tile()
+                .expect("Board should have initial capacity for 2 items.");
+        }
+        board
     }
 
-    pub fn shift(&self, d: Direction) -> Option<Board> {
-        let mut total_score = 0;
+    pub fn shift(&mut self, d: Direction) -> BoardMutationResult {
         match d {
-            Direction::LEFT => Some(Board(
-                self.0
-                    .chunks(Board::SIZE)
-                    .map(combine_and_score)
-                    .flat_map(|(row, score)| {
-                        total_score += score;
-                        row
-                    })
-                    .collect(),
-            )),
-            Direction::RIGHT => Some(Board(
-                self.0
-                    .chunks(Board::SIZE)
-                    .map(|r| {
-                        let reversed = r.iter().rev().cloned().collect::<Vec<_>>();
-                        let (mut scored, score) = combine_and_score(&reversed);
-                        scored.reverse();
-                        (scored, score)
-                    })
-                    .flat_map(|(row, score)| {
-                        total_score += score;
-                        row
-                    })
-                    .collect(),
-            )),
+            Direction::LEFT => self.shift_left()?,
+            Direction::RIGHT => self.shift_right()?,
             Direction::UP | Direction::DOWN => {
-                let score_shift = match d {
-                    Direction::UP => Direction::LEFT,
-                    _ => Direction::RIGHT,
+                self.values = transpose(&self.values);
+                match d {
+                    Direction::UP => self.shift_left()?,
+                    _ => self.shift_right()?,
                 };
-                let left = Board(transpose(&self.0)).shift(score_shift).unwrap();
-                Some(Board(transpose(&left.0)))
+                self.values = transpose(&self.values);
             }
+        };
+        Ok(())
+    }
+
+    fn shift_right(&mut self) -> BoardMutationResult {
+        self.values = self
+            .values
+            .chunks(Board::SIZE)
+            .map(|r| {
+                let reversed: Vec<_> = r.iter().rev().cloned().collect();
+                let (mut scored, score) = combine_and_score(&reversed);
+                self.score += score;
+                scored.reverse();
+                scored
+            })
+            .flat_map(identity)
+            .collect();
+        Ok(())
+    }
+
+    fn shift_left(&mut self) -> BoardMutationResult {
+        self.values = self
+            .values
+            .chunks(Board::SIZE)
+            .map(combine_and_score)
+            .flat_map(|(row, score)| {
+                self.score += score;
+                row
+            })
+            .collect();
+        Ok(())
+    }
+
+    fn add_random_tile(&mut self) -> BoardMutationResult {
+        let mut rng = rand::thread_rng();
+        match self
+            .values
+            .iter()
+            .enumerate() // collect the indices of the tiles with value 0
+            .filter_map(|(idx, val)| match val {
+                0 => Some(idx),
+                _ => None,
+            }) // choose a random tile
+            .choose(&mut rng)
+        {
+            Some(idx) => {
+                // 9 times out of 10 return a 4
+                let next_val = [(2, 9), (4, 1)].choose_weighted(&mut rng, |i| i.1)?.0;
+                self.values[idx] = next_val;
+                Ok(())
+            }
+            None => Err("No space left for tile.".into()),
         }
     }
 }
@@ -68,6 +112,15 @@ fn transpose(orig: &[usize]) -> Vec<usize> {
     flipped
 }
 
+/// Add together each adjacent pair of equal non-zero values to get the row's score.
+/// Return a new vector with the results of scoring collapsed to the left.
+///
+///
+/// let row = &[2, 2, 4, 4]
+/// let expected = (vec![4, 8, 0, 0], 12)
+/// assert_eq!(combine_and_score(row), expected)
+///
+/// TIL: doctests don't work for private functions
 fn combine_and_score(row: &[usize]) -> (Vec<usize>, usize) {
     let mut next = push_zeros(row);
     let mut score = 0;
@@ -82,13 +135,15 @@ fn combine_and_score(row: &[usize]) -> (Vec<usize>, usize) {
     (push_zeros(&next), score)
 }
 
+/// return a new vec with all non-zero values at the front
 fn push_zeros(i: &[usize]) -> Vec<usize> {
-    let mut new = vec![0; i.len()];
     i.iter()
-        .filter(|&f| *f > 0)
+        .filter(|&&f| f > 0)
         .enumerate()
-        .for_each(|(idx, val)| new[idx] = *val);
-    new
+        .fold(vec![0; i.len()], |mut new, (idx, &val)| {
+            new[idx] = val;
+            new
+        })
 }
 
 impl fmt::Display for Board {
@@ -96,7 +151,7 @@ impl fmt::Display for Board {
         let row_separator = "+---------".repeat(Board::SIZE) + "+\n";
         let row_spacer = "|         ".repeat(Board::SIZE) + "|\n";
 
-        for row in self.0.chunks(Board::SIZE) {
+        for row in self.values.chunks(Board::SIZE) {
             write!(f, "{}", row_separator)?;
             write!(f, "{}", row_spacer)?;
 
@@ -136,47 +191,79 @@ impl fmt::Display for Board {
 mod tests {
     use super::*;
 
+    #[rustfmt::skip]
+    fn new_test_board() -> Board {
+        Board {
+            values: vec![
+                8, 8, 0, 2,
+                8, 2, 8, 0,
+                2, 0, 2, 0,
+                2, 4, 4, 0,
+            ],
+            score: 0,
+        }
+    }
+
     #[test]
     #[rustfmt::skip]
-    fn board_should_shift() {
-        let b = Board(vec![
-            8, 8, 0, 2,
-            8, 2, 8, 0,
-            2, 0, 2, 0,
-            2, 4, 4, 0,
-        ]);
-
-        let next = b.shift(Direction::LEFT).unwrap();
-        assert_eq!(next.0, &[
+    fn board_should_shift_left() {
+        let mut b = new_test_board();
+        b.shift(Direction::LEFT).unwrap();
+        assert_eq!(b.values, &[
             16, 2, 0, 0,
             8, 2, 8, 0,
             4, 0, 0, 0,
             2, 8, 0, 0,
         ]);
+        assert_eq!(b.score, 28);
+    }
 
-        let next = b.shift(Direction::RIGHT).unwrap();
-        assert_eq!(next.0, &[
+    #[test]
+    #[rustfmt::skip]
+    fn board_should_shift_right() {
+        let mut b = new_test_board();
+        b.shift(Direction::RIGHT).unwrap();
+        assert_eq!(b.values, &[
             0, 0, 16, 2,
             0, 8, 2, 8,
             0, 0, 0, 4,
             0, 0, 2, 8,
         ]);
+        assert_eq!(b.score, 28);
+    }
 
-        let next = b.shift(Direction::UP).unwrap();
-        assert_eq!(next.0, &[
+    #[test]
+    #[rustfmt::skip]
+    fn board_should_shift_up() {
+        let mut b = new_test_board();
+        b.shift(Direction::UP).unwrap();
+        assert_eq!(b.values, &[
             16, 8, 8, 2,
             4,  2, 2, 0,
             0,  4, 4, 0,
             0,  0, 0, 0,
         ]);
+        assert_eq!(b.score, 20);
+    }
 
-        let next = b.shift(Direction::DOWN).unwrap();
-        assert_eq!(next.0, &[
+    #[test]
+    #[rustfmt::skip]
+    fn board_should_shift_down() {
+        let mut b = new_test_board();
+        b.shift(Direction::DOWN).unwrap();
+        assert_eq!(b.values, &[
             0,  0, 0, 0,
             0,  8, 8, 0,
             16, 2, 2, 0,
             4,  4, 4, 2,
         ]);
+        assert_eq!(b.score, 20);
+    }
+
+    #[test]
+    fn new_board_should_have_2_tiles_with_values() {
+        let b = Board::new();
+        assert_eq!(b.values.iter().filter(|v| [2, 4].contains(v)).count(), 2);
     }
 
     #[test]
