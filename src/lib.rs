@@ -77,7 +77,7 @@ impl Board {
         Ok(())
     }
 
-    fn add_random_tile(&mut self) -> BoardMutationResult {
+    pub fn add_random_tile(&mut self) -> BoardMutationResult {
         let mut rng = rand::thread_rng();
         match self
             .values
@@ -150,6 +150,7 @@ impl fmt::Display for Board {
         let row_separator = "+---------".repeat(Board::SIZE) + "+\n";
         let row_spacer = "|         ".repeat(Board::SIZE) + "|\n";
 
+        write!(f, "Score: {}\n", self.score)?;
         for row in self.values.chunks(Board::SIZE) {
             write!(f, "{}", row_separator)?;
             write!(f, "{}", row_spacer)?;

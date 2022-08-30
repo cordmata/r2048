@@ -1,24 +1,41 @@
+use console::Term;
 use r2048::*;
-use std::{process::exit, thread::sleep, time::Duration};
+use std::{error::Error, process::exit, thread::sleep, time::Duration};
 
 fn main() {
     let mut game: Board = Board::new();
-    println!("Starting State:\n\n{}", game);
-    for d in [
-        Direction::LEFT,
-        Direction::RIGHT,
-        Direction::UP,
-        Direction::DOWN,
-    ] {
-        match game.shift(d) {
-            Ok(()) => {
-                println!("\r{}", game)
+    let term = Term::stdout();
+    term.clear_screen().expect("Should be able to clear screen");
+    println!("\r{}", game);
+    loop {
+        match term.read_key() {
+            Ok(key) => {
+                term.clear_screen().expect("Should be able to clear screen");
+                let direction = match key {
+                    console::Key::ArrowLeft => Direction::LEFT,
+                    console::Key::ArrowRight => Direction::RIGHT,
+                    console::Key::ArrowUp => Direction::UP,
+                    console::Key::ArrowDown => Direction::DOWN,
+                    _ => continue,
+                };
+                match game.shift(direction) {
+                    Ok(()) => {
+                        match game.add_random_tile() {
+                            Ok(_) => {}
+                            Err(e) => bail(e),
+                        };
+                        println!("\r{}", game)
+                    }
+                    Err(e) => bail(e),
+                }
             }
-            Err(e) => {
-                println!("Game Over! - : {}", e);
-                sleep(Duration::from_secs(3));
-                exit(0);
-            }
+            Err(e) => bail(Box::new(e)),
         }
     }
+}
+
+fn bail(e: Box<dyn Error>) {
+    println!("Game Over! {}", e);
+    sleep(Duration::from_secs(3));
+    exit(0);
 }
