@@ -1,7 +1,7 @@
 use console::Style;
 use core::fmt;
 use rand::seq::{IteratorRandom, SliceRandom};
-use std::{convert::identity, error::Error};
+use std::error::Error;
 
 #[derive(Debug)]
 pub struct Board {
@@ -53,14 +53,13 @@ impl Board {
         self.values = self
             .values
             .chunks(Board::SIZE)
-            .map(|r| {
+            .flat_map(|r| {
                 let reversed: Vec<_> = r.iter().rev().cloned().collect();
                 let (mut scored, score) = combine_and_score(&reversed);
                 self.score += score;
                 scored.reverse();
                 scored
             })
-            .flat_map(identity)
             .collect();
         Ok(())
     }
