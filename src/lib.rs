@@ -91,7 +91,7 @@ impl Board {
             .choose(&mut rng)
         {
             Some(idx) => {
-                // 9 times out of 10 return a 4
+                // 9 times out of 10 return a 2, but sometimes throw a 4 in there
                 let next_val = [(2, 9), (4, 1)].choose_weighted(&mut rng, |i| i.1)?.0;
                 self.values[idx] = next_val;
                 Ok(())
