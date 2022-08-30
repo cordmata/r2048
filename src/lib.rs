@@ -261,6 +261,23 @@ mod tests {
     }
 
     #[test]
+    #[rustfmt::skip]
+    fn should_transpose() {
+        assert_eq!(
+            transpose(&[
+                2, 1, 2, 3,
+                4, 1, 2, 3,
+                8, 1, 2, 3,
+                2, 1, 2, 3,
+            ]), &[
+                2, 4, 8, 2,
+                1, 1, 1, 1,
+                2, 2, 2, 2,
+                3, 3, 3, 3,
+            ]);
+    }
+
+    #[test]
     fn new_board_should_have_2_tiles_with_values() {
         let b = Board::new();
         assert_eq!(b.values.iter().filter(|v| [2, 4].contains(v)).count(), 2);
