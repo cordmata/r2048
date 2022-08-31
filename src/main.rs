@@ -36,6 +36,5 @@ fn main() {
 
 fn bail(e: Box<dyn Error>) {
     println!("Game Over! {}", e);
-    sleep(Duration::from_secs(3));
     exit(0);
 }
