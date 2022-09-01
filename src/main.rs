@@ -1,6 +1,6 @@
 use console::Term;
 use r2048::*;
-use std::{error::Error, process::exit, thread::sleep, time::Duration};
+use std::{error::Error, process::exit};
 
 fn main() {
     let mut game: Board = Board::new();
