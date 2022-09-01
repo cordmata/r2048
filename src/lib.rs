@@ -152,23 +152,23 @@ impl fmt::Display for Board {
 
         write!(f, "Score: {}\n", self.score)?;
         for row in self.values.chunks(Board::SIZE) {
-            write!(f, "{}", row_separator)?;
-            write!(f, "{}", row_spacer)?;
+            write!(f, "{row_separator}")?;
+            write!(f, "{row_spacer}")?;
 
             for cell in row.iter() {
                 let style = match cell {
-                    2 => Style::new().cyan(),
-                    4 => Style::new().cyan().dim(),
-                    8 => Style::new().cyan().bright(),
-                    16 => Style::new().magenta(),
-                    32 => Style::new().magenta().dim(),
-                    64 => Style::new().magenta().bright(),
-                    128 => Style::new().blue(),
-                    256 => Style::new().blue().dim(),
-                    512 => Style::new().blue().bright(),
-                    1024 => Style::new().yellow(),
-                    2048 => Style::new().green().bright(),
-                    2048.. => Style::new().on_green(),
+                    2 => Style::new().bright(),
+                    4 => Style::new(),
+                    8 => Style::new().magenta(),
+                    16 => Style::new().red().bright(),
+                    32 => Style::new().red(),
+                    64 => Style::new().red().dim(),
+                    128 => Style::new().yellow().bright(),
+                    256 => Style::new().yellow(),
+                    512 => Style::new().yellow().dim(),
+                    1024 => Style::new().yellow().dim(),
+                    2048 => Style::new().green(),
+                    2049.. => Style::new().on_green(),
                     _ => Style::new(),
                 };
 
@@ -180,9 +180,9 @@ impl fmt::Display for Board {
                 write!(f, "|{:^9}", style.apply_to(num_out))?;
             }
             write!(f, "|\n")?;
-            write!(f, "{}", row_spacer)?;
+            write!(f, "{row_spacer}")?;
         }
-        write!(f, "{}", row_separator)?;
+        write!(f, "{row_separator}")?;
         Ok(())
     }
 }
