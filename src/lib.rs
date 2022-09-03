@@ -8,12 +8,6 @@ pub struct Board {
     values: Vec<usize>,
     score: usize,
 }
-pub enum Direction {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-}
 
 type BoardMutationResult = Result<(), Box<dyn Error>>;
 
@@ -33,23 +27,20 @@ impl Board {
         board
     }
 
-    pub fn shift(&mut self, d: Direction) -> BoardMutationResult {
-        match d {
-            Direction::LEFT => self.shift_left()?,
-            Direction::RIGHT => self.shift_right()?,
-            Direction::UP | Direction::DOWN => {
-                self.values = transpose(&self.values);
-                match d {
-                    Direction::UP => self.shift_left()?,
-                    _ => self.shift_right()?,
-                };
-                self.values = transpose(&self.values);
-            }
-        };
+    pub fn shift_left(&mut self) -> BoardMutationResult {
+        self.values = self
+            .values
+            .chunks(Board::SIZE)
+            .map(combine_and_score)
+            .flat_map(|(row, score)| {
+                self.score += score;
+                row
+            })
+            .collect();
         Ok(())
     }
 
-    fn shift_right(&mut self) -> BoardMutationResult {
+    pub fn shift_right(&mut self) -> BoardMutationResult {
         self.values = self
             .values
             .chunks(Board::SIZE)
@@ -64,16 +55,17 @@ impl Board {
         Ok(())
     }
 
-    fn shift_left(&mut self) -> BoardMutationResult {
-        self.values = self
-            .values
-            .chunks(Board::SIZE)
-            .map(combine_and_score)
-            .flat_map(|(row, score)| {
-                self.score += score;
-                row
-            })
-            .collect();
+    pub fn shift_up(&mut self) -> BoardMutationResult {
+        self.values = transpose(&self.values);
+        self.shift_left()?;
+        self.values = transpose(&self.values);
+        Ok(())
+    }
+
+    pub fn shift_down(&mut self) -> BoardMutationResult {
+        self.values = transpose(&self.values);
+        self.shift_right()?;
+        self.values = transpose(&self.values);
         Ok(())
     }
 
@@ -208,7 +200,7 @@ mod tests {
     #[rustfmt::skip]
     fn board_should_shift_left() {
         let mut b = new_test_board();
-        b.shift(Direction::LEFT).unwrap();
+        b.shift_left().unwrap();
         assert_eq!(b.values, &[
             16, 2, 0, 0,
             8, 2, 8, 0,
@@ -222,7 +214,7 @@ mod tests {
     #[rustfmt::skip]
     fn board_should_shift_right() {
         let mut b = new_test_board();
-        b.shift(Direction::RIGHT).unwrap();
+        b.shift_right().unwrap();
         assert_eq!(b.values, &[
             0, 0, 16, 2,
             0, 8, 2, 8,
@@ -236,7 +228,7 @@ mod tests {
     #[rustfmt::skip]
     fn board_should_shift_up() {
         let mut b = new_test_board();
-        b.shift(Direction::UP).unwrap();
+        b.shift_up().unwrap();
         assert_eq!(b.values, &[
             16, 8, 8, 2,
             4,  2, 2, 0,
@@ -250,7 +242,7 @@ mod tests {
     #[rustfmt::skip]
     fn board_should_shift_down() {
         let mut b = new_test_board();
-        b.shift(Direction::DOWN).unwrap();
+        b.shift_down().unwrap();
         assert_eq!(b.values, &[
             0,  0, 0, 0,
             0,  8, 8, 0,

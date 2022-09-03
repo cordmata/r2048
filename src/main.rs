@@ -3,38 +3,25 @@ use r2048::*;
 use std::{error::Error, process::exit};
 
 fn main() {
-    let mut game: Board = Board::new();
-    let term = Term::stdout();
-    term.clear_screen().expect("Should be able to clear screen");
-    println!("\r{}", game);
-    loop {
-        match term.read_key() {
-            Ok(key) => {
-                term.clear_screen().expect("Should be able to clear screen");
-                let direction = match key {
-                    console::Key::ArrowLeft => Direction::LEFT,
-                    console::Key::ArrowRight => Direction::RIGHT,
-                    console::Key::ArrowUp => Direction::UP,
-                    console::Key::ArrowDown => Direction::DOWN,
-                    _ => continue,
-                };
-                match game.shift(direction) {
-                    Ok(()) => {
-                        match game.add_random_tile() {
-                            Ok(_) => {}
-                            Err(e) => bail(e),
-                        };
-                        println!("\r{}", game)
-                    }
-                    Err(e) => bail(e),
-                }
-            }
-            Err(e) => bail(Box::new(e)),
-        }
-    }
+    game_loop(Term::stdout(), Board::new()).unwrap_or_else(|e| {
+        println!("Game Over! {}", e);
+        exit(0);
+    });
 }
 
-fn bail(e: Box<dyn Error>) {
-    println!("Game Over! {}", e);
-    exit(0);
+fn game_loop(term: Term, mut game: Board) -> Result<(), Box<dyn Error>> {
+    term.clear_screen()?;
+    println!("\r{}", game);
+    loop {
+        match term.read_key()? {
+            console::Key::ArrowLeft => game.shift_left()?,
+            console::Key::ArrowRight => game.shift_right()?,
+            console::Key::ArrowUp => game.shift_up()?,
+            console::Key::ArrowDown => game.shift_down()?,
+            _ => continue,
+        };
+        game.add_random_tile()?;
+        term.clear_screen()?;
+        println!("\r{}", game);
+    }
 }
