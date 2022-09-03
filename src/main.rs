@@ -4,14 +4,14 @@ use std::{error::Error, process::exit};
 
 fn main() {
     game_loop(Term::stdout(), Board::new()).unwrap_or_else(|e| {
-        println!("Game Over! {}", e);
+        println!("Game Over! {e}");
         exit(0);
     });
 }
 
 fn game_loop(term: Term, mut game: Board) -> Result<(), Box<dyn Error>> {
     term.clear_screen()?;
-    println!("\r{}", game);
+    println!("\r{game}");
     loop {
         match term.read_key()? {
             console::Key::ArrowLeft => game.shift_left()?,
@@ -22,6 +22,6 @@ fn game_loop(term: Term, mut game: Board) -> Result<(), Box<dyn Error>> {
         };
         game.add_random_tile()?;
         term.clear_screen()?;
-        println!("\r{}", game);
+        println!("\r{game}");
     }
 }
