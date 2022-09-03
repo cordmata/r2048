@@ -11,6 +11,12 @@ pub struct Board {
 
 type BoardMutationResult = Result<(), Box<dyn Error>>;
 
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Board {
     const SIZE: usize = 4;
 
@@ -139,13 +145,13 @@ fn push_zeros(i: &[usize]) -> Vec<usize> {
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let row_separator = "+---------".repeat(Board::SIZE) + "+\n";
-        let row_spacer = "|         ".repeat(Board::SIZE) + "|\n";
+        let row_separator = "+---------".repeat(Board::SIZE) + "+";
+        let row_spacer = "|         ".repeat(Board::SIZE) + "|";
 
-        write!(f, "Score: {}\n", self.score)?;
+        writeln!(f, "Score: {}", self.score)?;
         for row in self.values.chunks(Board::SIZE) {
-            write!(f, "{row_separator}")?;
-            write!(f, "{row_spacer}")?;
+            writeln!(f, "{row_separator}")?;
+            writeln!(f, "{row_spacer}")?;
 
             for cell in row.iter() {
                 let style = match cell {
@@ -171,10 +177,10 @@ impl fmt::Display for Board {
 
                 write!(f, "|{:^9}", style.apply_to(num_out))?;
             }
-            write!(f, "|\n")?;
-            write!(f, "{row_spacer}")?;
+            writeln!(f, "|")?;
+            writeln!(f, "{row_spacer}")?;
         }
-        write!(f, "{row_separator}")?;
+        writeln!(f, "{row_separator}")?;
         Ok(())
     }
 }
