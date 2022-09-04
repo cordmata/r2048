@@ -112,12 +112,7 @@ fn transpose(orig: &[usize]) -> Vec<usize> {
 /// Add together each adjacent pair of equal non-zero values to get the row's score.
 /// Return a new vector with the results of scoring collapsed to the left.
 ///
-///
-/// let row = &[2, 2, 4, 4]
-/// let expected = (vec![4, 8, 0, 0], 12)
-/// assert_eq!(combine_and_score(row), expected)
-///
-/// TIL: doctests don't work for private functions
+/// score_row(&[2, 2, 4, 4]) ==> (vec![4, 8, 0, 0], 12)
 fn score_row(row: &[usize]) -> (Vec<usize>, usize) {
     let mut next = push_zeros(row);
     let mut score = 0;
