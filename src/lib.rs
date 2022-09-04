@@ -1,7 +1,7 @@
 use console::Style;
 use core::fmt;
 use rand::seq::{IteratorRandom, SliceRandom};
-use std::error::Error;
+use std::{error::Error, iter::repeat};
 
 #[derive(Debug)]
 pub struct Board {
@@ -37,7 +37,7 @@ impl Board {
         self.values = self
             .values
             .chunks(Board::SIZE)
-            .map(combine_and_score)
+            .map(score_row)
             .flat_map(|(row, score)| {
                 self.score += score;
                 row
@@ -50,9 +50,9 @@ impl Board {
         self.values = self
             .values
             .chunks(Board::SIZE)
-            .flat_map(|r| {
-                let reversed: Vec<_> = r.iter().rev().cloned().collect();
-                let (mut scored, score) = combine_and_score(&reversed);
+            .flat_map(|row| {
+                let reversed: Vec<_> = row.iter().rev().cloned().collect();
+                let (mut scored, score) = score_row(&reversed);
                 self.score += score;
                 scored.reverse();
                 scored
@@ -118,7 +118,7 @@ fn transpose(orig: &[usize]) -> Vec<usize> {
 /// assert_eq!(combine_and_score(row), expected)
 ///
 /// TIL: doctests don't work for private functions
-fn combine_and_score(row: &[usize]) -> (Vec<usize>, usize) {
+fn score_row(row: &[usize]) -> (Vec<usize>, usize) {
     let mut next = push_zeros(row);
     let mut score = 0;
     for idx in 0..next.len() {
@@ -136,11 +136,10 @@ fn combine_and_score(row: &[usize]) -> (Vec<usize>, usize) {
 fn push_zeros(i: &[usize]) -> Vec<usize> {
     i.iter()
         .filter(|&&f| f > 0)
-        .enumerate()
-        .fold(vec![0; i.len()], |mut new, (idx, &val)| {
-            new[idx] = val;
-            new
-        })
+        .cloned()
+        .chain(repeat(0))
+        .take(i.len())
+        .collect()
 }
 
 impl fmt::Display for Board {
@@ -290,15 +289,12 @@ mod tests {
     }
 
     #[test]
-    fn should_combine_and_score() {
-        assert_eq!(combine_and_score(&[2, 0, 0, 4]), (vec![2, 4, 0, 0], 0));
-        assert_eq!(combine_and_score(&[2, 0, 2, 0]), (vec![4, 0, 0, 0], 4));
-        assert_eq!(combine_and_score(&[2, 2, 2, 0]), (vec![4, 2, 0, 0], 4));
-        assert_eq!(combine_and_score(&[2, 2, 4, 4]), (vec![4, 8, 0, 0], 12));
-        assert_eq!(combine_and_score(&[4, 4, 32, 8]), (vec![8, 32, 8, 0], 8));
-        assert_eq!(
-            combine_and_score(&[0, 256, 256, 8]),
-            (vec![512, 8, 0, 0], 512)
-        );
+    fn should_score_row() {
+        assert_eq!(score_row(&[2, 0, 0, 4]), (vec![2, 4, 0, 0], 0));
+        assert_eq!(score_row(&[2, 0, 2, 0]), (vec![4, 0, 0, 0], 4));
+        assert_eq!(score_row(&[2, 2, 2, 0]), (vec![4, 2, 0, 0], 4));
+        assert_eq!(score_row(&[2, 2, 4, 4]), (vec![4, 8, 0, 0], 12));
+        assert_eq!(score_row(&[4, 4, 32, 8]), (vec![8, 32, 8, 0], 8));
+        assert_eq!(score_row(&[0, 256, 256, 8]), (vec![512, 8, 0, 0], 512));
     }
 }
