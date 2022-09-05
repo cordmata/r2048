@@ -1,6 +1,6 @@
 use console::Style;
 use core::fmt;
-use rand::seq::{IteratorRandom, SliceRandom};
+use rand::{seq::IteratorRandom, Rng};
 use std::{error::Error, iter::repeat};
 
 #[derive(Debug)]
@@ -89,8 +89,10 @@ impl Board {
         {
             Some(idx) => {
                 // 9 times out of 10 return a 2, but sometimes throw a 4 in there
-                let next_val = [(2, 9), (4, 1)].choose_weighted(&mut rng, |i| i.1)?.0;
-                self.values[idx] = next_val;
+                self.values[idx] = match rng.gen_range(1..=10) {
+                    10 => 4,
+                    _ => 2,
+                };
                 Ok(())
             }
             None => Err("No space left for tile.".into()),
