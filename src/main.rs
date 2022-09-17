@@ -14,7 +14,7 @@ fn main() {
 
 fn game_loop(term: Term, mut game: Board) -> Result<(), Box<dyn Error>> {
     const FOOTER: &str = "🟢 Use arrow keys ⬅️ ⬆️ ⬇️ ➡️  to shift the board. \n\
-                          ❌ Press 'q' to quit.";
+                          🔴 Press 'q' to quit.";
     term.hide_cursor()?;
     loop {
         term.clear_screen()?;
