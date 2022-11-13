@@ -80,11 +80,13 @@ impl Board {
         match self
             .values
             .iter()
-            .enumerate() // collect the indices of the tiles with value 0
+            .enumerate()
+            // collect the indices of the tiles with value 0
             .filter_map(|(idx, val)| match val {
                 0 => Some(idx),
                 _ => None,
-            }) // choose a random tile
+            })
+            // choose a random tile
             .choose(&mut rng)
         {
             Some(idx) => {
