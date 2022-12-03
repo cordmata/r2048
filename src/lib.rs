@@ -3,19 +3,13 @@ use core::fmt;
 use rand::{seq::IteratorRandom, Rng};
 use std::{error::Error, iter::repeat};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Board {
     values: Vec<usize>,
     score: usize,
 }
 
 type BoardMutationResult = Result<(), Box<dyn Error>>;
-
-impl Default for Board {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 impl Board {
     const SIZE: usize = 4;
